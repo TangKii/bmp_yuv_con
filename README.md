@@ -1,2 +1,2 @@
-# bmp2yuv
-bmp2yuv convert
+# bmp_yuv_convert
+bmp and yuv convert
