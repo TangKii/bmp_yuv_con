@@ -26,6 +26,7 @@ typedef struct
     uint32_t colorsUsed;       // Number of colors in the color palette (0 for full color)
     uint32_t importantColors;  // Number of important colors (0 for all)
 } BMPInfoHeader;
+#pragma pack(pop)  // Restore default packing
 
 void print_help(void) {
     printf("Usage: -w <width> -h <height> [-v] <input_file> <output_file>\n");
@@ -78,9 +79,11 @@ void yuv422p_to_rgb(unsigned char *y_data, unsigned char *u_data, unsigned char 
 void save_bmp(unsigned char *rgb_data, int width, int height, const char *filename) {
 
     FILE *file;
+    uint32_t allagn_width =  ((width*3 + 3) / 4) * 4;
+    uint8_t fill_data[256] = {0xff};
 
-    BMPHeader bmpHeader = {0x4D42, sizeof(BMPHeader) + sizeof(BMPInfoHeader) + width * height * 3, 0, sizeof(BMPHeader) + sizeof(BMPInfoHeader)};
-    BMPInfoHeader bmpInfoHeader = {40, width, height, 1, 24, 0, width * height * 3, 0, 0, 0, 0};
+    BMPHeader bmpHeader = {0x4D42, sizeof(BMPHeader) + sizeof(BMPInfoHeader) + allagn_width * height * 3, 0, sizeof(BMPHeader) + sizeof(BMPInfoHeader)};
+    BMPInfoHeader bmpInfoHeader = {40, width, height, 1, 24, 0, allagn_width * height * 3, 0, 0, 0, 0};
 
     file = fopen(filename, "wb");
     if (file == NULL) {
@@ -93,7 +96,12 @@ void save_bmp(unsigned char *rgb_data, int width, int height, const char *filena
     fwrite(&bmpInfoHeader, sizeof(BMPInfoHeader), 1, file);
 
     // 写入RGB数据
-    fwrite(rgb_data, sizeof(unsigned char), width * height * 3, file);
+    //fwrite(rgb_data, sizeof(unsigned char), width * height * 3, file);
+    for(uint32_t j=0;j<height;j++) {
+		fwrite(rgb_data+j*width*3, width*3, 1, file);
+		fwrite(fill_data, allagn_width-width * 3, 1, file);
+	}
+
     fclose(file);
 }
 
@@ -147,6 +155,7 @@ int main(int argc, char *argv[]) {
         switch (opt) {
             case 'v':
                 flag_verbose = 1;
+                break;
             case 'w':
                 width = atoi(optarg); // 将参数值转换为整数
                 break;
@@ -160,6 +169,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Unknown option `-%c'.\n", optopt);
                 }
                 return 1;
+                break;
             default:
                 return 1;
         }
