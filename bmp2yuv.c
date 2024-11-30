@@ -58,8 +58,8 @@ void convertBMPtoYV16(FILE *bmpFile, FILE *yv16File) {
     }
 
     // Allocate memory for image data
-    uint8_t *imageData = (uint8_t *)malloc(bmpInfoHeader.imageSize);
-    fread(imageData, 1, bmpInfoHeader.imageSize, bmpFile);
+    uint8_t *imageData = (uint8_t *)malloc(bmpInfoHeader.width*bmpInfoHeader.height*3);
+    fread(imageData, 1, bmpInfoHeader.width*bmpInfoHeader.height*3, bmpFile);
 
     // Calculate size of U and V planes
     int uvSize = bmpInfoHeader.width * bmpInfoHeader.height / 2;
@@ -76,24 +76,37 @@ void convertBMPtoYV16(FILE *bmpFile, FILE *yv16File) {
     for (int y = bmpInfoHeader.height - 1; y >= 0; y--) {
         for (int x = 1; x <= bmpInfoHeader.width; x++) {
             int index = y * (bmpInfoHeader.width * 3 + rowPadding) + (x-1) * 3;
-
             uint8_t B = imageData[index];
             uint8_t G = imageData[index + 1];
             uint8_t R = imageData[index + 2];
             uint8_t Y, U, V, U_last, V_last;
 
+            int coeff00 = 612;// 0.299 * 2048;
+            int coeff01 = 1202;// 0.587 * 2048;
+            int coeff02 = 233;// 0.114 * 2048;
+            int coeff03 = 0;
+
+            int coeff10 = -346;// -0.169 * 2048;
+            int coeff11 = -678;// -0.331 * 2048;
+            int coeff12 = 1024;// 0.5 * 2048;
+            int coeff13 = 262144; // 128*2048
+
+            int coeff20 = 1024;// 0.5 * 2048;
+            int coeff21 = -857;// -0.4187 * 2048;
+            int coeff22 = -167;// -0.0813 * 2048;
+            int coeff23 = 262144;
+
             // Convert RGB to YUV
-             Y = limitToRange(0.299 * R + 0.587 * G + 0.114 * B);
-             U = limitToRange(-0.14713 * R - 0.288862 * G + 0.436 * B + 128);
-             V = limitToRange(0.615 * R - 0.51498 * G - 0.10001 * B + 128);
-            // Populate Y plane
+             Y = limitToRange((coeff00 * R + coeff01 * G + coeff02 * B) >> 11);
+             U = limitToRange(((coeff10 * R + coeff11 * G + coeff12 * B) >> 11) + 128);
+             V = limitToRange(((coeff20 * R + coeff21 * G + coeff22 * B) >> 11) + 128);
             fwrite(&Y, 1, 1, yv16File);
 
             // Populate U and V planes (every second pixel)
             if (x % 2 == 0) {
                 int uvIndex = (bmpInfoHeader.height - 1 - y) * bmpInfoHeader.width / 2 + (x-1) / 2;
-                uPlane[uvIndex] = (U + U_last) >> 1;
-                vPlane[uvIndex] = (V + V_last) >> 1;
+                uPlane[uvIndex] = U;//(U + U_last) >> 1;
+                vPlane[uvIndex] = V;//(V + V_last) >> 1;
             }
 
             V_last = V;

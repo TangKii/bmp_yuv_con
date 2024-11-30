@@ -52,14 +52,25 @@ void yuv422p_to_rgb(unsigned char *y_data, unsigned char *u_data, unsigned char 
             u = u_data[index/2];
             v = v_data[index/2];
 
-            // YUV转RGB
-            c = y - 16;
-            d = u - 128;
-            e = v - 128;
+            int coeff00 = 2048;
+            int coeff01 = 0;
+            int coeff02 = 2871;
+            int coeff03 = -367447;
 
-            b = (298 * c + 409 * e + 128) >> 8;
-            g = (298 * c - 100 * d - 208 * e + 128) >> 8;
-            r = (298 * c + 516 * d + 128) >> 8;
+            int coeff10 = 2048;
+            int coeff11 = -704;
+            int coeff12 = -1463;
+            int coeff13 = 276480;
+
+            int coeff20 = 2048;
+            int coeff21 = 3629;
+            int coeff22 = 0;
+            int coeff23 = -464896;
+
+            // YUV转RGB
+            r = (coeff00 * y + coeff01 * u + coeff02 * v + coeff03) >> 11;
+            g = (coeff10 * y + coeff11 * u + coeff12 * v + coeff13) >> 11;
+            b = (coeff20 * y + coeff21 * u + coeff22 * v + coeff23) >> 11;
 
             // 裁剪RGB值
             r = r < 0 ? 0 : (r > 255 ? 255 : r);
