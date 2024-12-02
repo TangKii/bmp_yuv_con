@@ -78,9 +78,9 @@ void yuv422p_to_rgb(unsigned char *y_data, unsigned char *u_data, unsigned char 
             b = b < 0 ? 0 : (b > 255 ? 255 : b);
 
             // 将RGB数据写入数组
-            rgb_data[((height-1-i) * width + j) * 3] = r;
+            rgb_data[((height-1-i) * width + j) * 3] = b;
             rgb_data[(((height-1-i) * width + j) * 3) + 1] = g;
-            rgb_data[(((height-1-i) * width + j) * 3) + 2] = b;
+            rgb_data[(((height-1-i) * width + j) * 3) + 2] = r;
         }
     }
 }
